@@ -366,6 +366,13 @@ class Tree:
 
         return topology_array
 
+    def get_children_array_of(self, parent_id):
+
+        topology_array = self.get_topology_array()
+        children_array = np.where(topology_array == parent_id)
+
+        return children_array[0]
+
     def get_theta_array(self):
         """ This function returns the theta array as a numpy array. """
 
