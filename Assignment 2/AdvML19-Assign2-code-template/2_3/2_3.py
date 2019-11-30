@@ -29,8 +29,33 @@ from Tree import Tree
 from Tree import Node
 import math
 
+def calculate_s(theta, beta, tree, node):
+    nr_categories = theta[0].size
+    s = np.zeros(nr_categories)
 
-def calculate_likelihood(tree_topology, theta, beta, tree):
+    # if leaf
+    if not math.isnan(beta[node]):
+        beta_value = beta[node].astype(int)
+        s[beta_value] = 1
+        return s
+
+    # if node is parent
+    nodes_children = tree.get_children_array_of(node)
+    factors = []
+    for child in np.nditer(nodes_children):
+        #converting to suitable format
+        child_CPD = get_matrix(theta[child])
+
+        s_child = calculate_s(theta, beta, tree, child)
+        factors.append(child_CPD.dot(s_child))
+
+    if len(factors) > 1:
+        s = np.multiply(factors[0], factors[1])  # elementwise multiplication
+    else:
+        s = factors[0]
+    return s
+
+def calculate_likelihood(theta, beta, tree):
     """
     This function calculates the likelihood of a sample of leaves.
     :param: tree_topology: A tree topology. Type: numpy array. Dimensions: (num_nodes, )
@@ -44,54 +69,11 @@ def calculate_likelihood(tree_topology, theta, beta, tree):
     Function template: def calculate_likelihood(tree_topology, theta, beta):
     You can change it to: def calculate_likelihood(tree_topology, theta, beta, new_param_1=[], new_param_2=123):
     """
-    nr_categories = theta[0].size
-    print("tree topology: ",tree_topology)
-    #print("theta: ", theta)
 
     print("Calculating the likelihood...")
+    s_root = calculate_s(theta, beta, tree, 0)
 
-    #where all s values are stored
-    s = np.zeros((tree_topology.size, nr_categories)) #(nodes, categories)
-
-    # all leaves in tree
-    nodes_to_compute = np.argwhere(np.isfinite(beta)).flatten()
-
-    while nodes_to_compute.size > 0:
-        node = nodes_to_compute[-1] #last element in array
-        nodes_parent = tree_topology[node].astype(int)
-
-        #if leaf
-        if not math.isnan(beta[node]):
-            beta_value = beta[node].astype(int)
-
-            temp_s = np.zeros(nr_categories)
-            temp_s[beta_value] = 1
-            s[node] = temp_s
-        #if parent
-        else:
-            nodes_children = tree.get_children_array_of(node)
-            factors = []
-
-            for child in np.nditer(nodes_children):
-
-                child_CPD = get_matrix(theta[child])
-                #print("child cpd", child_CPD)
-                #print("child s", s[child])
-                factors.append(child_CPD.dot(s[child]))
-
-            if len(factors) > 1:
-                s[node] = np.multiply(factors[0],factors[1]) #elementwise multiplication
-            else:
-                s[node] = factors[0]
-
-        # adding parent to queue if not already there and if not current node is root
-        if nodes_parent not in nodes_to_compute and nodes_parent >= 0:
-            nodes_to_compute = np.insert(nodes_to_compute, 0, nodes_parent)
-        nodes_to_compute = nodes_to_compute[:-1]  # remove computed node from queue
-
-    print(s)
-
-    likelihood = theta[0].dot(s[0])
+    likelihood = theta[0].dot(s_root)
 
     return likelihood
 
@@ -102,15 +84,16 @@ def get_matrix(mat):
         matrix[index] = array
     return matrix
 
-
 def main():
 
     print("\n1. Load tree data from file and print it\n")
 
     filename = {"small":"data/q2_3_small_tree.pkl", "medium": "data/q2_3_medium_tree.pkl", "large": "data/q2_3_large_tree.pkl"}
     tree = Tree()
-    tree.load_tree(filename["large"])
+    tree.load_tree(filename["small"])
     tree.print()
+
+    print("tree topology: ", tree.get_topology_array())
 
     print("\n2. Calculate likelihood of each FILTERED sample\n")
     # These filtered samples already available in the tree object.
@@ -120,7 +103,7 @@ def main():
         # beta is an assignment of values to all the leaves of the tree.
         beta = tree.filtered_samples[sample_idx]
         print("\n\tSample: ", sample_idx, "\tBeta: ", beta)
-        sample_likelihood = calculate_likelihood(tree.get_topology_array(), tree.get_theta_array(), beta, tree)
+        sample_likelihood = calculate_likelihood(tree.get_theta_array(), beta, tree)
         print("\tLikelihood: ", sample_likelihood)
 
 
