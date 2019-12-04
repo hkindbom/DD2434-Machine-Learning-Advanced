@@ -84,6 +84,16 @@ def get_matrix(mat):
         matrix[index] = array
     return matrix
 
+def test_prob_sum(tree):
+    all_possible_betas = tree.generate_all_possible_betas()
+
+    prob_sum = 0
+    for beta_sample in all_possible_betas:
+        sample_likelihood = calculate_likelihood(tree.get_theta_array(), beta_sample, tree)
+        prob_sum += sample_likelihood
+
+    print("Probability sum: ", prob_sum)
+
 def main():
 
     print("\n1. Load tree data from file and print it\n")
@@ -98,6 +108,10 @@ def main():
     print("\n2. Calculate likelihood of each FILTERED sample\n")
     # These filtered samples already available in the tree object.
     # Alternatively, if you want, you can load them from corresponding .txt or .npy files
+
+    #Testing if probability of all possible beta values sums to 1
+    test_prob_sum(tree)
+
 
     for sample_idx in range(tree.num_samples):
         # beta is an assignment of values to all the leaves of the tree.

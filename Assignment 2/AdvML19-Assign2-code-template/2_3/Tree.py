@@ -4,6 +4,7 @@
 
 import numpy as np
 import pickle
+import itertools
 
 
 class TreeMixture:
@@ -344,6 +345,25 @@ class Tree:
         self.samples = samples
         self.filtered_samples = filtered_samples
         self.num_samples = num_samples
+
+    def generate_all_possible_betas(self):
+        nr_cat = self.k
+        sample_beta = self.filtered_samples[0]
+        leaf_idxs = np.argwhere(np.isfinite(sample_beta)).flatten()
+        nr_leaves = leaf_idxs.shape[0]
+
+        cat_list = range(nr_cat)
+        #generate all possible betas (cartesian product)
+        all_possible_betas_raw = [p for p in itertools.product(cat_list, repeat=nr_leaves)]
+
+        # each row is one possible beta
+        all_possible_betas = np.zeros((len(all_possible_betas_raw), sample_beta.shape[0]))
+        all_possible_betas[:] = np.nan
+        for possible_beta_idx, possible_beta in enumerate(all_possible_betas_raw):
+            for index, beta_value in enumerate(possible_beta):
+                all_possible_betas[possible_beta_idx, leaf_idxs[index]] = beta_value
+
+        return all_possible_betas
 
     def get_topology_array(self):
         """ This function returns the tree topology as a numpy array. Each item represent the id of the parent node. """
