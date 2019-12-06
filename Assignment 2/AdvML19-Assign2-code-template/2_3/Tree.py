@@ -1,6 +1,10 @@
 """ This file created as supplementary code for tree-related questions in DD2434 - Assignment 2.
     Current version of the document is built up on 2018' codes,
-    accessible via: https://gits-15.sys.kth.se/butepage/MLadvHT18 """
+    accessible via: https://gits-15.sys.kth.se/butepage/MLadvHT18
+
+    generate_all_possible_betas(), get_children_array_of() were written by Hannes Kindbom as helper functions
+
+    """
 
 import numpy as np
 import pickle
@@ -347,6 +351,7 @@ class Tree:
         self.num_samples = num_samples
 
     def generate_all_possible_betas(self):
+        """ This function generates and returns all possible betas as a numpy array. Each row is one possible beta. """
         nr_cat = self.k
         sample_beta = self.filtered_samples[0]
         leaf_idxs = np.argwhere(np.isfinite(sample_beta)).flatten()
@@ -356,7 +361,6 @@ class Tree:
         #generate all possible betas (cartesian product)
         all_possible_betas_raw = [p for p in itertools.product(cat_list, repeat=nr_leaves)]
 
-        # each row is one possible beta
         all_possible_betas = np.zeros((len(all_possible_betas_raw), sample_beta.shape[0]))
         all_possible_betas[:] = np.nan
         for possible_beta_idx, possible_beta in enumerate(all_possible_betas_raw):
@@ -387,6 +391,7 @@ class Tree:
         return topology_array
 
     def get_children_array_of(self, parent_id):
+        """ This function returns the children of a given perent as a numpy array. """
 
         topology_array = self.get_topology_array()
         children_array = np.where(topology_array == parent_id)

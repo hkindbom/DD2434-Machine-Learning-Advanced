@@ -1,35 +1,19 @@
-""" This file is created as the solution template for question 2.3 in DD2434 - Assignment 2.
-
-    Please keep the fixed parameters in the function templates as is (in 2_3.py file).
-    However if you need, you can add parameters as default parameters.
-    i.e.
-    Function template: def calculate_likelihood(tree_topology, theta, beta):
-    You can change it to: def calculate_likelihood(tree_topology, theta, beta, new_param_1=[], new_param_2=123):
-
-    You can write helper functions however you want.
-
-    If you want, you can use the class structures provided to you (Node, Tree and TreeMixture classes in Tree.py
-    file), and modify them as needed. In addition to the sample files given to you, it is very important for you to
-    test your algorithm with your own simulated data for various cases and analyse the results.
-
-    For those who do not want to use the provided structures, we also saved the properties of trees in .txt and .npy
-    format.
-
-    Also, I am aware that the file names and their extensions are not well-formed, especially in Tree.py file
-    (i.e example_tree_mixture.pkl_samples.txt). I wanted to keep the template codes as simple as possible.
-    You can change the file names however you want (i.e tmm_1_samples.txt).
-
-    For this assignment, we gave you three different trees (q_2_3_small_tree, q_2_3_medium_tree, q_2_3_large_tree).
-    Each tree have 5 samples (whose inner nodes are masked with np.nan values).
-    We want you to calculate the likelihoods of each given sample and report it.
-"""
+#This file was built upon the the solution template for question 2.3 in DD2434 - Assignment 2.
 
 import numpy as np
 from Tree import Tree
-from Tree import Node
 import math
 
 def calculate_s(theta, beta, tree, node):
+    """
+    This function calculates "smaller" part in the recursive formula (see report).
+    :param: theta: CPD of the tree. Type: numpy array. Dimensions: (num_nodes, K)
+    :param: beta: A list of node assignments. Type: numpy array. Dimensions: (num_nodes, )
+                Note: Inner nodes are assigned to np.nan. The leaves have values in [K]
+    :param: tree: The tree object
+    :param: node: The current node to calculate for. Type: int.
+    :return: s: The smaller value for the node. Type: numpy array. Dimensions: (K, )
+    """
     nr_categories = theta[0].size
     s = np.zeros(nr_categories)
 
@@ -58,16 +42,11 @@ def calculate_s(theta, beta, tree, node):
 def calculate_likelihood(theta, beta, tree):
     """
     This function calculates the likelihood of a sample of leaves.
-    :param: tree_topology: A tree topology. Type: numpy array. Dimensions: (num_nodes, )
     :param: theta: CPD of the tree. Type: numpy array. Dimensions: (num_nodes, K)
     :param: beta: A list of node assignments. Type: numpy array. Dimensions: (num_nodes, )
                 Note: Inner nodes are assigned to np.nan. The leaves have values in [K]
+    :param: tree: The tree object
     :return: likelihood: The likelihood of beta. Type: float.
-
-    You can change the function signature and add new parameters. Add them as parameters with some default values.
-    i.e.
-    Function template: def calculate_likelihood(tree_topology, theta, beta):
-    You can change it to: def calculate_likelihood(tree_topology, theta, beta, new_param_1=[], new_param_2=123):
     """
 
     print("Calculating the likelihood...")
@@ -77,14 +56,24 @@ def calculate_likelihood(theta, beta, tree):
 
     return likelihood
 
-#converting to format which we can calculate with
+
 def get_matrix(mat):
+    """
+    This function converts a np.array of arrays to a format which we can calculate with.
+    :param: mat: Type: numpy array. Dimensions: (K, K)
+
+    :return: matrix: A non-nested matrix of "standard format". Type: numpy array. Dimensions: (K, K)
+    """
     matrix = np.zeros((mat.size, mat.size))
     for index, array in enumerate(mat):
         matrix[index] = array
     return matrix
 
 def test_prob_sum(tree):
+    """
+    This function calculates the sum of the probabilities for all possible node assignments (betas) and prints it.
+    :param: tree: Type: object.
+    """
     all_possible_betas = tree.generate_all_possible_betas()
 
     prob_sum = 0
@@ -94,11 +83,21 @@ def test_prob_sum(tree):
 
     print("Probability sum: ", prob_sum)
 
+def generate_tree(filename):
+    """
+    This function generates a probabilistic binary tree, some filtered samples and then saves it.
+    :param: filename: Type: string.
+    """
+    tree = Tree()
+    tree.create_random_binary_tree(10, 6, 6)
+    tree.sample_tree(2)
+    tree.save_tree(filename)
+
 def main():
 
     print("\n1. Load tree data from file and print it\n")
 
-    filename = {"small":"data/q2_3_small_tree.pkl", "medium": "data/q2_3_medium_tree.pkl", "large": "data/q2_3_large_tree.pkl"}
+    filename = {"small_test":"data/q2_3_small_test_tree.pkl", "small":"data/q2_3_small_tree.pkl", "medium": "data/q2_3_medium_tree.pkl", "large": "data/q2_3_large_tree.pkl"}
     tree = Tree()
     tree.load_tree(filename["small"])
     tree.print()
@@ -106,20 +105,15 @@ def main():
     print("tree topology: ", tree.get_topology_array())
 
     print("\n2. Calculate likelihood of each FILTERED sample\n")
-    # These filtered samples already available in the tree object.
-    # Alternatively, if you want, you can load them from corresponding .txt or .npy files
 
     #Testing if probability of all possible beta values sums to 1
     test_prob_sum(tree)
 
-
     for sample_idx in range(tree.num_samples):
-        # beta is an assignment of values to all the leaves of the tree.
         beta = tree.filtered_samples[sample_idx]
         print("\n\tSample: ", sample_idx, "\tBeta: ", beta)
         sample_likelihood = calculate_likelihood(tree.get_theta_array(), beta, tree)
         print("\tLikelihood: ", sample_likelihood)
-
 
 if __name__ == "__main__":
 
