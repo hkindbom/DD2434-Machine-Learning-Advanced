@@ -1,7 +1,6 @@
 # DD2434 Machine Learning, Advanced
 Assignments from the master course in advanced machine learning on KTH, fall 2019. 
 The overall focus is on Bayesian statistics. 
- "2_3"   
 #### Tools
 - **Python 3** 
 - Numpy 
