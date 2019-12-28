@@ -97,14 +97,16 @@ def calculate_likelihood(theta, beta, tree):
                 factors.append(child_CPD.dot(s[child]))
 
             if len(factors) > 1:
-                s[node] = np.multiply(factors[0], factors[1])  # elementwise multiplication
+                # elementwise multiplication
+                s[node] = np.multiply(factors[0], factors[1])
             else:
                 s[node] = factors[0]
 
         # adding parent to queue if not already there and if not current node is root
         if nodes_parent not in nodes_to_compute and nodes_parent >= 0:
             nodes_to_compute = np.insert(nodes_to_compute, 0, nodes_parent)
-        nodes_to_compute = nodes_to_compute[:-1]  # remove computed node from queue
+        # remove computed node from queue
+        nodes_to_compute = nodes_to_compute[:-1]
 
     likelihood = theta[0].dot(s[0])
     return likelihood
@@ -152,7 +154,7 @@ def main():
 
     filename = {"small_test":"data/q2_3_small_test_tree.pkl", "small":"data/q2_3_small_tree.pkl", "medium": "data/q2_3_medium_tree.pkl", "large": "data/q2_3_large_tree.pkl"}
     tree = Tree()
-    tree.load_tree(filename["small"])
+    tree.load_tree(filename["large"])
     tree.print()
 
     print("tree topology: ", tree.get_topology_array())
