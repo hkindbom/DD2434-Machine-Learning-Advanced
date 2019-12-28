@@ -2,7 +2,7 @@
 
 import numpy as np
 from Tree import Tree
-import math
+import math, time
 
 def calculate_s(theta, beta, tree, node):
     """
@@ -39,9 +39,9 @@ def calculate_s(theta, beta, tree, node):
         s = factors[0]
     return s
 
-def calculate_likelihood(theta, beta, tree):
+def calculate_likelihood_recursive(theta, beta, tree):
     """
-    This function calculates the likelihood of a sample of leaves.
+    This function calculates the likelihood of a sample of leaves with pure recursion.
     :param: theta: CPD of the tree. Type: numpy array. Dimensions: (num_nodes, K)
     :param: beta: A list of node assignments. Type: numpy array. Dimensions: (num_nodes, )
                 Note: Inner nodes are assigned to np.nan. The leaves have values in [K]
@@ -54,6 +54,59 @@ def calculate_likelihood(theta, beta, tree):
 
     likelihood = theta[0].dot(s_root)
 
+    return likelihood
+
+def calculate_likelihood(theta, beta, tree):
+    """
+    This function calculates the likelihood of a sample of leaves with Dynamic programming.
+    :param: theta: CPD of the tree. Type: numpy array. Dimensions: (num_nodes, K)
+    :param: beta: A list of node assignments. Type: numpy array. Dimensions: (num_nodes, )
+                Note: Inner nodes are assigned to np.nan. The leaves have values in [K]
+    :param: tree: The tree object
+    :return: likelihood: The likelihood of beta. Type: float.
+    """
+
+    nr_categories = theta[0].size
+    tree_topology = tree.get_topology_array()
+    print("Calculating the likelihood...")
+
+    # where all s values are stored
+    s = np.zeros((tree_topology.size, nr_categories))  # (nodes, categories)
+
+    # all leaves in tree
+    nodes_to_compute = np.argwhere(np.isfinite(beta)).flatten()
+
+    while nodes_to_compute.size > 0:
+        node = nodes_to_compute[-1]  # last element in array
+        nodes_parent = tree_topology[node].astype(int)
+
+        # if leaf
+        if not math.isnan(beta[node]):
+            beta_value = beta[node].astype(int)
+
+            temp_s = np.zeros(nr_categories)
+            temp_s[beta_value] = 1
+            s[node] = temp_s
+        # if is parent
+        else:
+            nodes_children = tree.get_children_array_of(node)
+            factors = []
+
+            for child in np.nditer(nodes_children):
+                child_CPD = get_matrix(theta[child])
+                factors.append(child_CPD.dot(s[child]))
+
+            if len(factors) > 1:
+                s[node] = np.multiply(factors[0], factors[1])  # elementwise multiplication
+            else:
+                s[node] = factors[0]
+
+        # adding parent to queue if not already there and if not current node is root
+        if nodes_parent not in nodes_to_compute and nodes_parent >= 0:
+            nodes_to_compute = np.insert(nodes_to_compute, 0, nodes_parent)
+        nodes_to_compute = nodes_to_compute[:-1]  # remove computed node from queue
+
+    likelihood = theta[0].dot(s[0])
     return likelihood
 
 
@@ -116,5 +169,6 @@ def main():
         print("\tLikelihood: ", sample_likelihood)
 
 if __name__ == "__main__":
-
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
